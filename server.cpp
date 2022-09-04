@@ -106,7 +106,11 @@ void server::HandleRequest(int conn, string str)
 
     //连接mysql数据库
     MYSQL *con = mysql_init(NULL);
-    mysql_real_connect(con, "127.0.0.1", "root", "123456", "ChatProject");
+    if(!mysql_real_connect(con, "127.0.0.1", "root", "123456", "ChatProject",
+		    0,NULL,CLIENT_MULTI_STATEMENTS))
+    {
+    	cout <<"mysql connection failed!\n";
+    }
 
     if(str.find("name:") != str.npos)
     {
@@ -120,7 +124,7 @@ void server::HandleRequest(int conn, string str)
         search += pass;
         search += "\");";
         cout  << "sql语句："<<search<<endl<<endl;
-        msl_query(conn, search.c_str());
+        mysql_query(con, search.c_str());
     }
 }
 
