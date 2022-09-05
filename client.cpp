@@ -58,6 +58,10 @@ void client::HandleClient(int conn)
     //开始处理各种事物
     while(1)
     {
+        if(if_login)
+        {
+            break;
+        }
         cin >> choice;
         if(choice == 0)
         {
@@ -123,31 +127,56 @@ void client::HandleClient(int conn)
             }
         }
     }
+    
     //登录成功
-    if(if_login)
+    while(if_login&&1)
     {
-        system("clear");//清空终端
-        cout << "           欢迎回来,"<<login_name << endl;
-        cout<<" -------------------------------------------\n";
-        cout<<"|                                           |\n";
-        cout<<"|          请选择你要的选项：               |\n";
-        cout<<"|              0:退出                       |\n";
-        cout<<"|              1:发起单独聊天               |\n";
-        cout<<"|              2:发起群聊                   |\n";
-        cout<<"|                                           |\n";
-        cout<<" ------------------------------------------- \n\n";
+        if(if_login)
+        {
+            system("clear");//清空终端
+            cout << "           欢迎回来,"<<login_name << endl;
+            cout<<" -------------------------------------------\n";
+            cout<<"|                                           |\n";
+            cout<<"|          请选择你要的选项：               |\n";
+            cout<<"|              0:退出                       |\n";
+            cout<<"|              1:发起单独聊天               |\n";
+            cout<<"|              2:发起群聊                   |\n";
+            cout<<"|                                           |\n";
+            cout<<" ------------------------------------------- \n\n";
+        }
+        cin >> choice;
+        if(choice == 0)
+        {
+            break;
+        }
+        //私聊
+        if(choice == 1)
+        {
+            cout << "请输入对方的用户名:";
+            string target_name, content;
+            cin >> target_name;
+            string sendstr("target:"+target_name+"from:"+login_name);
+            send(sock, sendstr.c_str(),sendstr.length(),0);
+            cout << "请输入你想说的话(输入exit退出)：\n";
+            thread t1(client::SendMsg, conn);
+            thread t2(client::RecvMsg, conn);
+            t1.join();
+            t2.join();
+        }
     }
-}
+    close(sock);
+}  
 void client::SendMsg(int conn)
-{
+{  
     char sendbuf[100];
     while(1)
     {
-        memset(sendbuf,0,sizeof(sendbuf));
-        cin >> sendbuf;
-        int ret = send(conn, sendbuf, strlen(sendbuf),0);
+        string str;
+        cin >> str;
+        str = "content:"+str;
+        int ret = send(conn, str.c_str(), str.length(),0);
         //输入exit或者对端关闭时结束
-        if(strcmp(sendbuf, "exit")==0 || ret <= 0)
+        if(str == "content:exit" || ret <= 0)
         {
             break;
         }
@@ -165,6 +194,6 @@ void client::RecvMsg(int conn)
         {
             break;
         }
-        cout<<"收到服务器发来的消息: "<<buffer<<endl;
+        cout<<buffer<<endl;
     }
 }
