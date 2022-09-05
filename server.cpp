@@ -103,7 +103,9 @@ void server::HandleRequest(int conn, string str)
 {  
     char buffer[1000];
     string name, pass;
-
+    bool if_login;
+    string login_name;
+    
     //连接mysql数据库
     MYSQL *con = mysql_init(NULL);
     if(!mysql_real_connect(con, "127.0.0.1", "root", "123456", "ChatProject",
@@ -111,7 +113,7 @@ void server::HandleRequest(int conn, string str)
     {
     	cout <<"mysql connection failed!\n";
     }
-
+    //注册
     if(str.find("name:") != str.npos)
     {
         int p1 = str.find("name:");
@@ -125,6 +127,52 @@ void server::HandleRequest(int conn, string str)
         search += "\");";
         cout  << "sql语句："<<search<<endl<<endl;
         mysql_query(con, search.c_str());
+    }
+    //登录
+    else if(str.find("login")!=str.npos)
+    {
+        int p1 = str.find("login");
+        int p2 = str.find("pass:");
+        name=str.substr(p1+5,p2-5);
+        pass=str.substr(p2+5,str.length()-p2-4);
+        string search="SELECT * FROM USER WHERE NAME=\"";
+        search+=name;
+        search+="\";";
+        cout<<"sql语句:"<<search<<endl;
+        auto search_res=mysql_query(con,search.c_str());
+        auto result=mysql_store_result(con);
+        int col=mysql_num_fields(result);//获取列数
+        int row=mysql_num_rows(result);//获取行数
+        //查询到用户名
+        if(search_res == 0 && row != 0)
+        {
+            cout << "查询成功\n";
+            auto info = mysql_fetch_row(result);//获取一行的信息
+            cout << "查询到用户名:"<<info[0]<<"密码:"<<info[1]<<endl;
+            //密码正确
+            if(info[1]==pass)
+            {
+                cout << "登录密码正确\n\n";
+                string str1 = "ok";
+                if_login = true;
+                login_name = name;//记录下当前登录的用户名
+                send(conn, str1.c_str(), str1.length()+1, 0);
+            }
+            //密码错误
+            else
+            {
+                cout << "登录密码错误\n\n";
+                char str1[100] = "wrong";
+                send(conn, str1, strlen(str1), 0);
+            }
+        }    
+        //没找到用户名
+        else
+        {
+            cout << "查询失败\n\n";
+            char str1[100] = "wrong";
+            send(conn, str1, strlen(str1), 0);
+        }    
     }
 }
 
