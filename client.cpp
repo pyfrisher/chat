@@ -163,18 +163,42 @@ void client::HandleClient(int conn)
             t1.join();
             t2.join();
         }
+        //群聊
+        else if(choice == 2)
+        {
+            cout<<"请输入群号:";
+            int num;
+            cin >> num;
+            string sendstr("target:"+to_string(num));
+            send(sock, sendstr.c_str(), sendstr.length(),0);
+            cout << "请输入你想说的话(输入exit退出):\n";
+            thread t1(client::SendMsg, -conn);//创建发送线程，传入负数，和私聊区分开
+            thread t2(client::RecvMsg,conn);//创建接收
+            t1.join();
+            t2.join();
+        }
     }
     close(sock);
 }  
+//注意，前面不用加static
 void client::SendMsg(int conn)
 {  
-    char sendbuf[100];
+    //char sendbuf[100];
     while(1)
     {
         string str;
         cin >> str;
-        str = "content:"+str;
-        int ret = send(conn, str.c_str(), str.length(),0);
+        //私聊消息
+        if(conn > 0)
+        {
+            str = "content:"+str;
+        }
+        //群聊信息
+        else if(conn < 0)
+        {
+            str = "gr_message:"+str;
+        }
+        int ret = send(abs(conn), str.c_str(), str.length(),0);
         //输入exit或者对端关闭时结束
         if(str == "content:exit" || ret <= 0)
         {
